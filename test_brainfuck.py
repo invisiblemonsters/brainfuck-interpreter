@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 
 from brainfuck import (
@@ -335,9 +336,14 @@ class CommandLineTests(unittest.TestCase):
         self.assertIn("no program given", proc.stderr)
 
     def test_input_file(self):
-        proc = self.run_cli("examples/cat.bf", "--input-file", "examples/cat.bf")
+        # a temp file keeps this independent of how the checkout stores line endings
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "input.txt")
+            with open(path, "w", encoding="utf-8", newline="") as handle:
+                handle.write("abc")
+            proc = self.run_cli("examples/cat.bf", "--input-file", path)
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, ",[.,]\n")
+        self.assertEqual(proc.stdout, "abc")
 
     def test_cells_flag(self):
         # a program that starts with '-' needs the = form, or argparse reads it as a flag
